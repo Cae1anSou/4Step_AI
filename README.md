@@ -26,7 +26,7 @@
 
 ```bash
 cd backend
-pip install -r requirements.txt
+pip install -r requirements.txt    # conda环境可以使用： conda install --file requirements.txt
 ```
 
 2. 运行FastAPI服务：
