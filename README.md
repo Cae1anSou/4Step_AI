@@ -1,55 +1,53 @@
 # 4Step-AI
 
+> 四步调试Demo（内部仓库）
+
+## 功能速览
+- 前端：纯静态 HTML/CSS/JS，模拟 IDE 场景
+- 后端：FastAPI + 沙盒，按「提示 → 思考 → 行动 → 复盘」四级返回
+- 一键启动，依赖极少，方便快速试用
 
 ## 目录结构
-
-```
+```text
 4Step_AI/
-├─ backend/               # 后端FastAPI应用
-│   ├─ app.py             # FastAPI主应用
-│   ├─ ai_helper.py       # AI分析模块
-│   ├─ sandbox.py         # 代码沙盒环境
-│   └─ requirements.txt   # 后端依赖
-├─ frontend/              # 前端网页
-│   ├─ index.html         # 主页面
-│   ├─ css/               # 样式文件
-│   ├─ js/                # JavaScript文件
-│   └─ examples/          # Vue示例代码和展示
-└─ README.md              # 项目说明
+├─ backend/               # FastAPI ⽇常代码
+│   ├─ app.py             # 主应用
+│   ├─ ai_helper.py       # AI 分析逻辑
+│   ├─ sandbox.py         # 代码沙盒
+│   └─ requirements.txt   # 依赖列表
+├─ frontend/             
+│   ├─ index.html         # 入口页
+│   ├─ css/               # 样式
+│   └─ js/                # 交互脚本
+└─ README.md
 ```
 
-## 安装与运行
+## 快速开始
 
-### 后端设置
-
-1. 安装Python依赖：
-
+### 1. 后端（Python ≥3.9）
 ```bash
 cd backend
-pip install -r requirements.txt    # conda环境可以使用： conda install --file requirements.txt
+pip install -r requirements.txt          # 建议在虚拟环境中执行
+uvicorn app:app --reload                 # 默认 127.0.0.1:8000
 ```
 
-2. 运行FastAPI服务：
-
-```bash
-cd backend
-uvicorn app:app --reload
-```
-
-### 前端设置
-
-直接打开前端目录中的`index.html`文件，或使用任何HTTP服务器提供前端文件：
-
+### 2. 前端
+直接双击 `frontend/index.html`，或启动一个静态服务器：
 ```bash
 cd frontend
-python -m http.server
+python -m http.server 8000
+```
+浏览器访问 <http://localhost:8000>
+
+## 路线图
+- [ ] 情绪检测：识别用户「挣扎」状态
+- [ ] UI 呼吸灯：帮助按钮节奏提示
+- [ ] 四级调试信息：补全栈追踪 & 建议
+
+## 协作约定
+每个人直接开分支提交 PR，命名格式：
+```
+<类型>/<简述>  # 例：feat/emotion-detector
 ```
 
-然后访问 http://localhost:8000
-
-
-### 待实现功能
-
-- 实现用户情绪状态检测机制
-- 自动检测用户挣扎情况并触发帮助按钮脉动提示
-- 修改后端以支持四级调试模式返回不同错误信息
+有任何想法随时群里喊我～ 🍻
