@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vue学习助手 - 分阶段AI辅助系统</title>
+    <title>Hello-Vue</title>
     <link rel="stylesheet" href="css/style.css">
-    <!-- 引入代码编辑器 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/vue/vue.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
+    <!-- 引入 Monaco Editor -->
+    <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdn.jsdelivr.net/npm/monaco-editor@0.36.1/min/vs/editor/editor.main.css">
+    <script>var require = { paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.36.1/min/vs' } };</script>
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.36.1/min/vs/loader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.36.1/min/vs/editor/editor.main.nls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.36.1/min/vs/editor/editor.main.js"></script>
 </head>
 <body>
     <div class="app-container">
         <header>
-            <h1>Vue学习助手 - 交互式教学系统</h1>
+            <h1>Hello-Vue</h1>
             <nav>
                 <button id="preview-btn" class="nav-btn">预览示例</button>
                 <button id="learn-btn" class="nav-btn active">开始学习</button>

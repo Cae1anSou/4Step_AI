@@ -16,49 +16,437 @@ let componentParts = {
 
 // DOM加载完成后初始化
 document.addEventListener('DOMContentLoaded', () => {
-    // 初始化代码编辑器
-    initializeEditors();
+    console.log('DOM加载完成，准备加载Monaco编辑器...');
     
-    // 加载示例代码
-    loadExampleCode();
-    
-    // 设置事件监听
-    setupEventListeners();
-    
-    // 设置导航切换
+    // 先设置事件监听（不依赖于编辑器的部分）
     setupNavigation();
+    
+    // 确保在编辑器区域显示加载消息
+    const codeEditorElement = document.getElementById('code-editor');
+    if (codeEditorElement) {
+        codeEditorElement.innerHTML = '<div style="padding: 10px; color: #666;">Monaco编辑器加载中...</div>';
+    }
+    
+    // 使用require加载Monaco编辑器
+    window.require(['vs/editor/editor.main'], function() {
+        console.log('Monaco编辑器加载成功!');
+        
+        // 初始化编辑器
+        setTimeout(() => {
+            initializeEditors();
+            
+            // 等待编辑器初始化完成后再加载示例代码
+            setTimeout(() => {
+                loadExampleCode();
+                // 设置事件监听（依赖于编辑器的部分）
+                setupEventListeners();
+            }, 500);
+        }, 200);
+    }, function(error) {
+        console.error('Monaco编辑器加载失败:', error);
+        const codeEditorElement = document.getElementById('code-editor');
+        if (codeEditorElement) {
+            codeEditorElement.innerHTML = '<div style="padding: 10px; color: #f00;">Monaco编辑器加载失败。请刷新页面重试。</div>';
+        }
+    });
 });
 
 // 初始化代码编辑器
 function initializeEditors() {
-    // 主代码编辑器
-    codeEditor = CodeMirror(document.getElementById('code-editor'), {
-        mode: 'vue',
-        theme: 'default',
-        lineNumbers: true,
-        autoCloseBrackets: true,
-        matchBrackets: true,
-        indentUnit: 2,
-        tabSize: 2,
-        lineWrapping: true,
-        extraKeys: { 'Ctrl-Space': 'autocomplete' }
-    });
+    console.log('初始化编辑器...');
+    try {
+        // 首先检查monaco对象是否存在
+        if (typeof monaco === 'undefined') {
+            console.error('Monaco未定义！请确保 Monaco 加载完毕');
+            return;
+        }
+        console.log('Monaco已成功加载，正在注册Vue语言...');
+        
+        // 注册 Vue 语言支持
+        monaco.languages.register({ id: 'vue' });
 
-    // 测试页面的代码编辑器
-    testCodeEditor = CodeMirror(document.getElementById('test-code-editor'), {
-        mode: 'vue',
-        theme: 'default',
-        lineNumbers: true,
-        autoCloseBrackets: true,
-        matchBrackets: true,
-        indentUnit: 2,
-        tabSize: 2,
-        lineWrapping: true
+        // 完全重写Vue的语法高亮规则
+        monaco.languages.setMonarchTokensProvider('vue', {
+            // 使用HTML的基本高亮规则
+            defaultToken: '',
+            tokenPostfix: '.vue',
+            ignoreCase: true,
+            
+            // HTML标签匹配规则
+            brackets: [
+                { token: 'delimiter.bracket', open: '{', close: '}' },
+                { token: 'delimiter.square', open: '[', close: ']' },
+                { token: 'delimiter.parenthesis', open: '(', close: ')' },
+                { token: 'delimiter.angle', open: '<', close: '>' }
+            ],
+            
+            // 关键字
+            keywords: [
+                'template', 'script', 'style', 'v-if', 'v-else', 'v-for', 'v-model', 'v-on', 'v-bind', 'v-show',
+                'component', 'keep-alive', 'slot', 'transition', 'transition-group',
+                'v-html', 'v-cloak', 'v-once'
+            ],
+            
+            tokenizer: {
+                root: [
+                    // 注释
+                    [/<!--/, 'comment', '@comment'],
+                    
+                    // vue标签
+                    [/<(template|script|style)\b/, {
+                        token: '@rematch',
+                        next: '@tag_$1',
+                        nextEmbedded: '$1'
+                    }],
+                    
+                    // 其他HTML标签
+                    [/<\/?\w+/, 'tag', '@tag'],
+                    
+                    // Vue模板插值 {{ }}
+                    [/{{/, { token: 'delimiter.bracket', next: '@vueExpression' }],
+                    
+                    // 其他内容
+                    [/[^<{{]+/, 'text']
+                ],
+                
+                // 处理Vue模板插值
+                vueExpression: [
+                    [/}}/, { token: 'delimiter.bracket', next: '@pop' }],
+                    [/'[^']*'/, 'string'],
+                    [/"[^"]*"/, 'string'],
+                    [/\d+\.\d+/, 'number.float'],
+                    [/\d+/, 'number'],
+                    [/[a-zA-Z_$][\w$]*/, {
+                        cases: {
+                            '@keywords': 'keyword',
+                            '@default': 'variable'
+                        }
+                    }],
+                    [/[<>\+\-\*\/=!]+/, 'operator'],
+                    [/[\[\]\(\)\{\}]/, 'delimiter.bracket'],
+                    [/[,:\.]/, 'delimiter'],
+                    [/\s+/, 'white']
+                ],
+                
+                // 处理HTML标签
+                tag: [
+                    [/\/>|>/, 'tag', '@pop'],
+                    [/v-[a-zA-Z0-9:-]+/, 'keyword'],  // Vue指令
+                    [/\w+/, 'attribute.name'],
+                    [/=/, 'delimiter'],
+                    [/"[^"]*"/, 'attribute.value'],
+                    [/'[^']*'/, 'attribute.value'],
+                    [/\s+/, 'white']
+                ],
+                
+                // 特殊处理template标签
+                tag_template: [
+                    [/>/, { token: 'tag', next: '@template_code', nextEmbedded: 'text/html' }]
+                ],
+                template_code: [
+                    [/<\/template>/, { token: '@rematch', next: '@pop', nextEmbedded: '@pop' }]
+                ],
+                
+                // 特殊处理script标签
+                tag_script: [
+                    [/>/, { token: 'tag', next: '@script_code', nextEmbedded: 'text/javascript' }]
+                ],
+                script_code: [
+                    [/<\/script>/, { token: '@rematch', next: '@pop', nextEmbedded: '@pop' }]
+                ],
+                
+                // 特殊处理style标签
+                tag_style: [
+                    [/>/, { token: 'tag', next: '@style_code', nextEmbedded: 'text/css' }]
+                ],
+                style_code: [
+                    [/<\/style>/, { token: '@rematch', next: '@pop', nextEmbedded: '@pop' }]
+                ],
+                
+                // 注释
+                comment: [
+                    [/-->/, 'comment', '@pop'],
+                    [/./, 'comment']
+                ]
+            }
+        });
+
+        // 创建Vue语言的格式化规则
+        monaco.languages.registerDocumentFormattingEditProvider('vue', {
+            provideDocumentFormattingEdits: function(model) {
+                return [
+                    {
+                        range: model.getFullModelRange(),
+                        text: model.getValue() // 暂不实现格式化
+                    }
+                ];
+            }
+        });
+
+        // 创建主代码编辑器
+        console.log('创建主代码编辑器...');
+        const codeEditorElement = document.getElementById('code-editor');
+        if (!codeEditorElement) {
+            console.error('主代码编辑器元素不存在!');
+            return;
+        }
+        
+        // 清空加载信息
+        codeEditorElement.innerHTML = '';
+        
+        try {
+            codeEditor = monaco.editor.create(codeEditorElement, {
+                value: '',
+                language: 'vue',
+                theme: 'vs',  // 也可以使用 'vs-dark' 或 'hc-black'
+                automaticLayout: true,
+                wordWrap: 'on',
+                fontSize: 14,
+                minimap: { enabled: false },
+                lineNumbers: 'on',
+                tabSize: 2,
+                // 启用其他实用功能
+                formatOnPaste: true,
+                formatOnType: true,
+                suggestOnTriggerCharacters: true,
+                // 代码检查
+                codeLens: true,
+                // 自动完成功能
+                quickSuggestions: true,
+                acceptSuggestionOnCommitCharacter: true,
+                acceptSuggestionOnEnter: 'on',
+                parameterHints: { enabled: true },
+                // 错误提示和修复
+                lightbulb: { enabled: true },
+                // 滚动设置
+                scrollBeyondLastLine: false,
+            });
+            console.log('主编辑器创建成功!');
+        } catch (err) {
+            console.error('主编辑器创建失败:', err);
+            return;
+        }
+
+        // 测试页面的代码编辑器
+        console.log('创建测试代码编辑器...');
+        const testCodeEditorElement = document.getElementById('test-code-editor');
+        if (!testCodeEditorElement) {
+            console.warn('测试代码编辑器元素不存在!');
+            // 跳过测试编辑器创建，但不影响主编辑器
+        } else {
+            // 清空加载信息
+            testCodeEditorElement.innerHTML = '';
+            
+            try {
+                testCodeEditor = monaco.editor.create(testCodeEditorElement, {
+                    value: '',
+                    language: 'vue',
+                    theme: 'vs',
+                    automaticLayout: true,
+                    wordWrap: 'on',
+                    fontSize: 14,
+                    minimap: { enabled: false },
+                    lineNumbers: 'on',
+                    tabSize: 2,
+                });
+                console.log('测试编辑器创建成功!');
+            } catch (err) {
+                console.error('测试编辑器创建失败:', err);
+                // 继续执行，因为主编辑器已创建成功
+            }
+        }
+
+        // 创建Vue代码诊断
+        console.log('Configuring Vue diagnostics...');
+        if (codeEditor) {
+            configureVueDiagnostics(codeEditor, monaco);
+        }
+        
+        if (testCodeEditor) {
+            configureVueDiagnostics(testCodeEditor, monaco);
+        }
+    } catch (error) {
+        console.error('Monaco编辑器初始化失败:', error);
+    }
+}
+
+// 配置Vue代码诊断 - 实现VSCode风格的静态检查
+function configureVueDiagnostics(editor, monaco) {
+    // 监听编辑器内容变化
+    let changeTimeout = null;
+    editor.onDidChangeModelContent(() => {
+        // 防抖处理，避免频繁检查
+        if (changeTimeout) {
+            clearTimeout(changeTimeout);
+        }
+        
+        changeTimeout = setTimeout(() => {
+            const code = editor.getValue();
+            validateVueCode(code, editor, monaco);
+        }, 500);
     });
+}
+
+// 验证Vue代码
+function validateVueCode(code, editor, monaco) {
+    // 清除现有的标记
+    monaco.editor.setModelMarkers(editor.getModel(), 'vue-validator', []);
+    
+    const markers = [];
+    
+    // 1. 验证HTML模板标签匹配
+    validateHtmlTags(code, markers);
+    
+    // 2. 验证Vue指令语法
+    validateVueDirectives(code, markers);
+    
+    // 3. 简单JavaScript语法检查（更复杂的检查通常需要使用ESLint等）
+    validateJavaScript(code, markers);
+    
+    // 设置标记到编辑器
+    monaco.editor.setModelMarkers(editor.getModel(), 'vue-validator', markers);
+}
+
+// 验证HTML标签是否匹配
+function validateHtmlTags(code, markers) {
+    const openTagsRegex = /<(\w+)[^>]*>/g;
+    const selfClosingTagsRegex = /<(\w+)[^>]*\/>/g;
+    const closeTagsRegex = /<\/(\w+)>/g;
+    
+    const stack = [];
+    let match;
+    
+    // 记录所有自闭合标签
+    const selfClosingTags = [];
+    while ((match = selfClosingTagsRegex.exec(code)) !== null) {
+        selfClosingTags.push(match.index);
+    }
+    
+    // 检查开标签
+    while ((match = openTagsRegex.exec(code)) !== null) {
+        // 检查是否为自闭合标签
+        let isSelfClosing = false;
+        for (const pos of selfClosingTags) {
+            if (match.index === pos) {
+                isSelfClosing = true;
+                break;
+            }
+        }
+        
+        if (!isSelfClosing) {
+            stack.push({
+                tag: match[1],
+                index: match.index,
+                length: match[0].length
+            });
+        }
+    }
+    
+    // 检查关标签
+    while ((match = closeTagsRegex.exec(code)) !== null) {
+        const closeTag = match[1];
+        
+        if (stack.length > 0 && stack[stack.length - 1].tag === closeTag) {
+            stack.pop(); // 匹配成功，弹出栈
+        } else {
+            // 关闭标签没有对应的开始标签
+            const pos = getPositionFromIndex(code, match.index);
+            markers.push({
+                severity: monaco.MarkerSeverity.Error,
+                startLineNumber: pos.line,
+                startColumn: pos.column,
+                endLineNumber: pos.line,
+                endColumn: pos.column + match[0].length,
+                message: `关闭标签 </${closeTag}> 没有匹配的开始标签`
+            });
+        }
+    }
+    
+    // 检查未关闭的标签
+    for (const unmatched of stack) {
+        const pos = getPositionFromIndex(code, unmatched.index);
+        markers.push({
+            severity: monaco.MarkerSeverity.Error,
+            startLineNumber: pos.line,
+            startColumn: pos.column,
+            endLineNumber: pos.line,
+            endColumn: pos.column + unmatched.length,
+            message: `标签 <${unmatched.tag}> 未关闭`
+        });
+    }
+}
+
+// 验证Vue指令语法
+function validateVueDirectives(code, markers) {
+    // 常见Vue指令错误检查
+    const directives = [
+        { regex: /v-for\s*=\s*"[^"]*"\s+(?!:key|v-bind:key)/g, message: 'v-for 指令应该始终包含 :key' },
+        { regex: /v-else\s+v-if/g, message: 'v-else 和 v-if 不能用在同一个元素上，应使用 v-else-if' },
+        { regex: /v-model\s*=\s*"([^"]+)\.([^"]+)"\s+v-for/g, message: 'v-model 与 v-for 一起使用时，要小心作用域问题' },
+        { regex: /v-if\s*=\s*"[^"]*"\s+v-for/g, message: '不建议 v-if 与 v-for 一起使用，应优先使用计算属性过滤' }
+    ];
+    
+    for (const directive of directives) {
+        let match;
+        while ((match = directive.regex.exec(code)) !== null) {
+            const pos = getPositionFromIndex(code, match.index);
+            markers.push({
+                severity: monaco.MarkerSeverity.Warning,
+                startLineNumber: pos.line,
+                startColumn: pos.column,
+                endLineNumber: pos.line,
+                endColumn: pos.column + match[0].length,
+                message: directive.message
+            });
+        }
+    }
+}
+
+// 简单验证JavaScript部分
+function validateJavaScript(code, markers) {
+    // 提取<script>标签内容
+    const scriptMatch = code.match(/<script>(\s*[\s\S]*?)<\/script>/);
+    if (!scriptMatch) return;
+    
+    const scriptContent = scriptMatch[1];
+    const scriptStart = code.indexOf(scriptContent);
+    
+    // 检查常见JS错误
+    const jsChecks = [
+        { regex: /(?<![\.\w])console\.log/g, message: '生产环境中应该移除 console.log 语句' },
+        { regex: /var\s+/g, message: '应使用 let 或 const 替代 var' },
+        { regex: /this\.\$refs\.[\w$]+\.[\w$]+/g, message: '直接修改子组件状态可能会导致问题，考虑使用props或事件' },
+        { regex: /([\w$]+)\s*=\s*([\w$]+)\s*[^=><]?=\s*/g, message: '您是否想使用 === 而不是 = ?' },
+    ];
+    
+    for (const check of jsChecks) {
+        let match;
+        while ((match = check.regex.exec(scriptContent)) !== null) {
+            const pos = getPositionFromIndex(code, scriptStart + match.index);
+            markers.push({
+                severity: monaco.MarkerSeverity.Warning,
+                startLineNumber: pos.line,
+                startColumn: pos.column,
+                endLineNumber: pos.line,
+                endColumn: pos.column + match[0].length,
+                message: check.message
+            });
+        }
+    }
+}
+
+// 辅助函数：根据索引获取行列位置
+function getPositionFromIndex(text, index) {
+    const lines = text.substring(0, index).split('\n');
+    return {
+        line: lines.length,
+        column: lines[lines.length - 1].length + 1
+    };
 }
 
 // 加载示例代码
 async function loadExampleCode() {
+    console.log('Loading example code...');
     try {
         // 在实际应用中，这里应该是一个AJAX请求获取示例代码
         // 为了演示，我们使用一个简单的Vue计数器组件作为示例
@@ -156,7 +544,32 @@ export default {
         
         // 默认显示完整组件
         originalCode = counterComponent;
-        codeEditor.setValue(counterComponent);
+        // 确保编辑器已经初始化
+        console.log('Setting example code in editor...', codeEditor ? 'Editor exists' : 'Editor not initialized');
+        
+        if (codeEditor) {
+            try {
+                codeEditor.setValue(counterComponent);
+                console.log('Example code set successfully!');
+            } catch (err) {
+                console.error('Failed to set editor value:', err);
+            }
+        } else {
+            console.warn('Editor not initialized yet, will try again in 1 second');
+            // 编辑器可能还没有初始化完成，我们尝试延迟加载
+            setTimeout(() => {
+                if (codeEditor) {
+                    try {
+                        codeEditor.setValue(counterComponent);
+                        console.log('Example code set with delay!');
+                    } catch (err) {
+                        console.error('Failed to set editor value after delay:', err);
+                    }
+                } else {
+                    console.error('Editor still not initialized after delay');
+                }
+            }, 1000);
+        }
         
         // 创建示例HTML文件（在实际应用中应该已经存在）
         createExampleHtml();
@@ -187,7 +600,7 @@ function setupEventListeners() {
     
     // 重置代码按钮
     document.getElementById('reset-code-btn').addEventListener('click', () => {
-        codeEditor.setValue(originalCode);
+        codeEditor && codeEditor.setValue(originalCode);
     });
     
     // 刷新预览按钮
@@ -258,13 +671,34 @@ function setupNavigation() {
 
 // 运行代码
 async function runCode() {
-    const code = codeEditor.getValue();
-    if (!code.trim()) {
+    console.log('运行代码按钮被点击');
+    
+    // 检查编辑器是否存在
+    if (!codeEditor) {
+        console.error('编辑器实例不存在!');
+        showFeedback('error', '编辑器初始化失败，请刷新页面重试。');
+        return;
+    }
+    
+    // 使用Monaco Editor的API获取代码
+    let code;
+    try {
+        code = codeEditor.getValue();
+        console.log('获取到编辑器代码:', code ? '代码长度:' + code.length : '无代码');
+    } catch (err) {
+        console.error('获取编辑器代码失败:', err);
+        showFeedback('error', '无法从编辑器获取代码。错误: ' + err.message);
+        return;
+    }
+    
+    if (!code || !code.trim()) {
+        console.log('代码为空');
         showFeedback('warning', '请先编写代码。');
         return;
     }
     
     showFeedback('info', '正在运行代码...');
+    console.log('准备发送请求到后端...');
     
     try {
         // 构建请求体
@@ -276,6 +710,8 @@ async function runCode() {
             }
         };
         
+        console.log('发送代码到后端:', API_URL + '/execute');
+        
         // 发送请求到后端
         const response = await fetch(`${API_URL}/execute`, {
             method: 'POST',
@@ -283,9 +719,17 @@ async function runCode() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(requestBody)
+        }).catch(error => {
+            console.error('请求失败:', error);
+            throw new Error('连接后端服务器失败，请确保后端服务器已启动。');
         });
         
-        const result = await response.json();
+        console.log('收到后端响应:', response.status);
+        
+        const result = await response.json().catch(error => {
+            console.error('解析响应JSON失败:', error);
+            throw new Error('无法解析后端响应。');
+        });
         
         // 处理结果
         if (result.success) {
@@ -324,7 +768,7 @@ async function runCode() {
                     `);
                     // 添加应用解决方案按钮的事件监听
                     document.getElementById('apply-solution').addEventListener('click', () => {
-                        codeEditor.setValue(result.solution);
+                        codeEditor && codeEditor.setValue(result.solution);
                         showFeedback('info', '已应用AI提供的解决方案，您可以再次运行代码查看效果。');
                     });
                     break;
@@ -356,6 +800,9 @@ function refreshPreview() {
 
 // 显示组件的特定部分
 function showComponentPart(part) {
+    // 确保编辑器已初始化
+    if (!codeEditor) return;
+    
     switch(part) {
         case 'template':
             codeEditor.setValue(`<template>\n${componentParts.template}\n</template>`);
