@@ -16,7 +16,7 @@ app = FastAPI()
 # 添加CORS中间件，允许前端访问
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 在生产环境中应该设置为具体的域名
+    allow_origins=["*"],  # 到时候真正部署的时候应该设置为具体的域名
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -118,11 +118,11 @@ async def create_sandbox(request: SandboxRequest):
             with open(os.path.join(temp_dir, 'script.js'), 'w') as f:
                 f.write(request.js)
             
-            # TODO: 在实际应用中，这里需要实现沙盒环境的创建和访问机制
+            # TODO: 这里需要实现沙盒环境的创建和访问机制
             # 简化版：返回文件内容供前端直接使用
             return {
                 "success": True,
-                "sandbox_id": "demo_sandbox_123",  # 在真实环境中应该是唯一ID
+                "sandbox_id": "demo_sandbox_123",  # 到时候应该是唯一动态ID
                 "html": request.html,
                 "css": request.css,
                 "js": request.js

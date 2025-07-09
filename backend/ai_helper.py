@@ -2,7 +2,7 @@
 AI助手模块 - 用于分析错误并提供不同层次的帮助
 """
 
-def get_filtered_errors(raw_error, code):
+def get_filtered_errors(raw_error, code): 
     """
     阶段1: AI筛选 - 从原始错误中提取关键信息
     
@@ -19,7 +19,7 @@ def get_filtered_errors(raw_error, code):
             filtered_errors.append(line)
             
         # 添加行号信息
-        if "at line" in line or "at position" in line:
+        elif "at line" in line or "at position" in line:
             filtered_errors.append(line)
     
     if not filtered_errors:
