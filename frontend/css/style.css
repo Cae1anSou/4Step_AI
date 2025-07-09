@@ -488,6 +488,40 @@ main {
   cursor: pointer;
 }
 
+/* 帮助按钮相关样式 */
+.help-button-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.help-button {
+  padding: 0.5rem 1rem;
+  background-color: #3498db;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.help-button:hover {
+  background-color: #2980b9;
+}
+
+.help-button.pulsing {
+  animation: pulse 1.5s infinite;
+}
+
+.help-level-indicator {
+  font-size: 0.85rem;
+  color: #666;
+  background-color: #f1f1f1;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
 /* 动画 */
 @keyframes fadeIn {
   from { opacity: 0; }

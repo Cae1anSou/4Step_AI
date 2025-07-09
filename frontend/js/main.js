@@ -595,53 +595,54 @@ function parseVueComponent(code) {
 
 // 设置事件监听
 function setupEventListeners() {
+    console.log('设置事件监听...');
+    
     // 运行代码按钮
     document.getElementById('run-code-btn').addEventListener('click', runCode);
     
     // 重置代码按钮
     document.getElementById('reset-code-btn').addEventListener('click', () => {
-        codeEditor && codeEditor.setValue(originalCode);
+        if (codeEditor && originalCode) {
+            codeEditor.setValue(originalCode);
+            showFeedback('info', '代码已重置为初始示例。');
+        }
     });
     
     // 刷新预览按钮
     document.getElementById('refresh-preview').addEventListener('click', refreshPreview);
     
-    // 调试级别选择器
-    document.querySelectorAll('.debug-level').forEach(button => {
-        button.addEventListener('click', (e) => {
-            document.querySelectorAll('.debug-level').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            e.target.classList.add('active');
-            currentDebugLevel = parseInt(e.target.dataset.level);
-        });
-    });
-    
-    // 组件部分选择
-    document.querySelectorAll('.component-part').forEach(part => {
+    // 组件树点击事件
+    const componentParts = document.querySelectorAll('.component-part');
+    componentParts.forEach(part => {
         part.addEventListener('click', (e) => {
-            const partName = e.target.dataset.part;
-            showComponentPart(partName);
+            const partType = e.target.getAttribute('data-part');
+            showComponentPart(partType);
         });
     });
     
-    // AI聊天窗口切换
-    document.getElementById('toggle-chat').addEventListener('click', toggleChatWindow);
+    // AI聊天切换
+    const aiChatToggle = document.getElementById('ai-chat-toggle');
+    if (aiChatToggle) {
+        aiChatToggle.addEventListener('click', toggleChatWindow);
+    }
     
-    // 发送消息
-    document.getElementById('send-message').addEventListener('click', sendUserMessage);
-    document.getElementById('user-message').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendUserMessage();
-        }
-    });
+    // AI聊天发送消息
+    const sendMessageBtn = document.getElementById('send-message');
+    if (sendMessageBtn) {
+        sendMessageBtn.addEventListener('click', sendUserMessage);
+    }
     
     // 提交测试答案
-    document.getElementById('submit-answer').addEventListener('click', submitTestAnswer);
+    const submitAnswerBtn = document.getElementById('submit-answer');
+    if (submitAnswerBtn) {
+        submitAnswerBtn.addEventListener('click', submitTestAnswer);
+    }
     
-    // AI帮助按钮
-    document.getElementById('ai-help-btn').addEventListener('click', requestAIHelp);
+    // 帮助按钮 - 新功能
+    const helpButton = document.getElementById('help-button');
+    if (helpButton) {
+        helpButton.addEventListener('click', increaseHelpLevel);
+    }
 }
 
 // 设置导航切换
@@ -904,6 +905,42 @@ async function submitTestAnswer() {
     } catch (error) {
         console.error('提交答案出错:', error);
         showTestFeedback('error', `连接服务器失败: ${error.message}`);
+    }
+}
+
+// 增加帮助级别
+function increaseHelpLevel() {
+    console.log('增加帮助级别...');
+    
+    // 提升帮助级别，实现循环
+    currentDebugLevel = (currentDebugLevel + 1) % 4;
+    
+    // 更新界面显示
+    const levelIndicator = document.getElementById('help-level-indicator');
+    
+    // 更新显示文本
+    switch(currentDebugLevel) {
+        case 0:
+            levelIndicator.textContent = '原始报错';
+            break;
+        case 1:
+            levelIndicator.textContent = 'AI筛选';
+            break;
+        case 2:
+            levelIndicator.textContent = 'AI提示';
+            break;
+        case 3:
+            levelIndicator.textContent = 'AI解决';
+            break;
+    }
+    
+    console.log('当前帮助级别更新为:', currentDebugLevel);
+    
+    // 如果有错误结果，自动重新运行代码获取更新后的提示
+    const feedbackContent = document.getElementById('feedback-content');
+    if (feedbackContent && feedbackContent.querySelector('.feedback-message.error')) {
+        // 有错误结果，自动重新运行获取新的提示
+        runCode();
     }
 }
 
