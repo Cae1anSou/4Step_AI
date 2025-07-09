@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue计数器示例</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f7f9fc;
+        }
+        
+        .counter-component {
+            font-family: Arial, sans-serif;
+            max-width: 300px;
+            margin: 0 auto;
+            text-align: center;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .counter-display {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .counter-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .counter-controls button {
+            font-size: 1.2rem;
+            padding: 5px 15px;
+            border: none;
+            border-radius: 4px;
+            background-color: #3498db;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .counter-controls button:hover {
+            background-color: #2980b9;
+        }
+        
+        .counter-controls button:last-child {
+            background-color: #e74c3c;
+        }
+        
+        .counter-controls button:last-child:hover {
+            background-color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="counter-component">
+            <h2>{{ title }}</h2>
+            <div class="counter-display">{{ count }}</div>
+            <div class="counter-controls">
+                <button @click="increment">+</button>
+                <button @click="decrement">-</button>
+                <button @click="reset">重置</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        
+        createApp({
+            data() {
+                return {
+                    count: 0,
+                    title: '计数器组件'
+                };
+            },
+            methods: {
+                increment() {
+                    this.count++;
+                },
+                decrement() {
+                    if (this.count > 0) {
+                        this.count--;
+                    }
+                },
+                reset() {
+                    this.count = 0;
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue学习助手 - 分阶段AI辅助系统</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- 引入代码编辑器 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/vue/vue.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Vue学习助手 - 交互式教学系统</h1>
+            <nav>
+                <button id="preview-btn" class="nav-btn">预览示例</button>
+                <button id="learn-btn" class="nav-btn active">开始学习</button>
+                <button id="test-btn" class="nav-btn">测试知识</button>
+                <button id="summary-btn" class="nav-btn">知识总结</button>
+            </nav>
+        </header>
+
+        <main>
+            <!-- 学习区域 -->
+            <section id="learning-section" class="section active">
+                <div class="section-header">
+                    <h2>学习Vue组件基础</h2>
+                    <span class="lesson-progress">第1课 / 共5课</span>
+                </div>
+
+                <div class="content-container">
+                    <!-- 左侧：示例预览 -->
+                    <div class="preview-container">
+                        <div class="preview-header">
+                            <h3>示例效果</h3>
+                            <div class="preview-controls">
+                                <button id="refresh-preview">刷新预览</button>
+                            </div>
+                        </div>
+                        <div class="preview-frame">
+                            <iframe id="preview-iframe" src="examples/counter.html"></iframe>
+                        </div>
+                        <div class="component-explorer">
+                            <h3>组件结构</h3>
+                            <ul id="component-tree">
+                                <li class="component-item selected">
+                                    <span>Counter.vue</span>
+                                    <ul>
+                                        <li class="component-part" data-part="template">Template</li>
+                                        <li class="component-part" data-part="script">Script</li>
+                                        <li class="component-part" data-part="style">Style</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 右侧：教学内容 -->
+                    <div class="teaching-container">
+                        <div class="code-editor-container">
+                            <div class="editor-header">
+                                <h3>编写代码</h3>
+                                <div class="editor-controls">
+                                    <button id="run-code-btn">运行代码</button>
+                                    <button id="reset-code-btn">重置代码</button>
+                                </div>
+                            </div>
+                            <div id="code-editor"></div>
+                        </div>
+
+                        <div class="feedback-container">
+                            <div class="feedback-header">
+                                <h3>运行结果</h3>
+                                <div class="debug-controls">
+                                    <span>调试级别:</span>
+                                    <div class="debug-level-selector">
+                                        <button class="debug-level active" data-level="0">原始报错</button>
+                                        <button class="debug-level" data-level="1">AI筛选</button>
+                                        <button class="debug-level" data-level="2">AI提示</button>
+                                        <button class="debug-level" data-level="3">AI解决</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="feedback-content">
+                                <div class="feedback-message success">
+                                    <p>代码尚未运行。点击"运行代码"按钮执行您的代码。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 知识测试区域 -->
+            <section id="test-section" class="section">
+                <div class="section-header">
+                    <h2>测试您的Vue知识</h2>
+                    <span class="test-progress">题目 1 / 5</span>
+                </div>
+
+                <div class="content-container">
+                    <div class="test-container">
+                        <div class="question-container">
+                            <h3>问题：</h3>
+                            <p id="question-text">在Vue组件中，如何正确地声明一个计数器并在按钮点击时增加其值？</p>
+                        </div>
+
+                        <div class="code-editor-container">
+                            <div class="editor-header">
+                                <h3>编写答案</h3>
+                                <div class="editor-controls">
+                                    <button id="submit-answer">提交答案</button>
+                                    <button id="reset-answer">重置答案</button>
+                                </div>
+                            </div>
+                            <div id="test-code-editor"></div>
+                        </div>
+
+                        <div class="test-feedback-container">
+                            <div class="feedback-header">
+                                <h3>反馈结果</h3>
+                                <button id="ai-help-btn" class="ai-help-btn">AI提示</button>
+                            </div>
+                            <div id="test-feedback-content">
+                                <div class="feedback-message info">
+                                    <p>请完成您的答案并提交。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 知识总结区域 -->
+            <section id="summary-section" class="section">
+                <div class="section-header">
+                    <h2>Vue知识总结</h2>
+                </div>
+                <div class="content-container">
+                    <div class="summary-container">
+                        <h3>您已经学习的Vue知识点</h3>
+                        <div class="mindmap-container">
+                            <!-- 此处将通过JS动态生成思维导图 -->
+                            <div id="mindmap"></div>
+                        </div>
+                    </div>
+
+                    <div class="next-steps">
+                        <h3>建议学习的下一步内容</h3>
+                        <ul class="next-topics">
+                            <li><a href="#">Vue组件通信深入</a></li>
+                            <li><a href="#">Vuex状态管理</a></li>
+                            <li><a href="#">Vue路由进阶</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <div class="ai-chat-container collapsed">
+            <div class="chat-header">
+                <h3>AI助手</h3>
+                <button id="toggle-chat">展开</button>
+            </div>
+            <div class="chat-messages">
+                <div class="message ai-message">
+                    <div class="message-content">
+                        <p>你好！我是你的Vue学习助手。我可以帮助你学习Vue的基础知识。有什么问题可以随时问我！</p>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input">
+                <textarea id="user-message" placeholder="输入您的问题..."></textarea>
+                <button id="send-message">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
